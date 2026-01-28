@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "Web Storage Test",
+  "short_name": "Web Storage Test",
+  "description": "A Web App to test client side storage's persistence",
+  "start_url": "/webStorageTest/",
+  "scope": "/webStorageTest/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/webStorageTest/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

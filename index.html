@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Storage Test</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="MyApp">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" sizes="any" href="icon.png">
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+  <h1>Web Storage Test</h1>
+
+  <button onclick="clearLog(); deleteData()">Delete Data</button><br>
+  <button id="persist" onclick="persistData()">Persist Storage</button>
+
+
+  <div id="results"></div>
+
+  <script>
+    const DATA = {
+      id: 1,
+      value: 'Hello World',
+      timestamp: new Date().toISOString()
+    };
+    const DB_NAME = 'myDB';
+    const STORE_NAME = 'myTestStore';
+    let db, objectStore;
+
+
+    function log(message) {
+      const results = document.getElementById('results');
+      const p = document.createElement('p');
+      p.textContent = message;
+      results.appendChild(p);
+    }
+
+    function clearLog() {
+      const results = document.getElementById('results');
+      results.innerHTML = '';
+    }
+
+    const persistButton = document.getElementById("persist");
+
+    function persistData() {
+      if (Notification.permission === "granted") {
+        new Notification("✅ Notification permission already granted!");
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            new Notification("✅ Notification permission granted!");
+          } else {
+            log("❌ Notification permission denied")
+          }
+        });
+      }
+
+      navigator.storage.persist().then((persistent) => {
+        if (persistent) {
+          log("✅ Storage set to persist");
+          persistButton.style.display = "none";
+        } else {
+          log("❌ Storage cannot be persisted, will be cleared by the UA under storage pressure.");
+        }
+      });
+    }
+
+    if (navigator.storage && navigator.storage.persist) {
+
+      navigator.storage.persisted().then((persistent) => {
+
+        if (persistent) {
+          log("✅ Storage already persistent");
+          persistButton.style.display = "none";
+        } else {
+          log("⁉️ Storage is not persistent");
+          //persistData();
+        }
+      });
+    } else {
+      persistButton.style.display = "none";
+    }
+
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onsuccess = (event) => {
+      db = event.target.result;
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.get(1);
+      request.onsuccess = (event) => {
+        const data = event.target.result
+        log("✅ Successfully read DATA from DB");
+        log(`DATA: ${JSON.stringify(data)}`);
+        writeData(data);
+      };
+
+      request.onerror = (event) => {
+        log("❌ Failed to read DATA from DB");
+        log("Creating DB...");
+        writeData(DATA);
+      };
+    };
+
+    request.onupgradeneeded = (event) => {
+      db = event.target.result;
+      log("⁉️ DB was not present, creating it...");
+      objectStore = db.createObjectStore(STORE_NAME, {
+        autoIncrement: false,
+        keyPath: 'id'
+      });
+      objectStore.transaction.oncomplete = (event) => {
+        writeData(DATA);
+      };
+    };
+
+    request.onerror = (event) => {
+      log(`❌ DB fatal error: ${event.target.errorCode}`);
+    };
+
+    function deleteData() {
+      // delete DB
+      let delRequest = indexedDB.deleteDatabase(DB_NAME);
+      delRequest.onsuccess = (event) => {
+        log("✅ Successfully deleted DB");
+      };
+      delRequest.onerror = (event) => {
+        log("❌ Failed to delete DB");
+      };
+    }
+
+    function writeData(data) {
+
+      data.lastUpdated = new Date().toISOString();
+
+      // write DATA to db
+      const objectStore = db
+        .transaction(STORE_NAME, 'readwrite')
+        .objectStore(STORE_NAME);
+
+      const request = objectStore.put(data);
+
+      request.onsuccess = (event) => {
+        log("✅ Successfully wrote DATA to DB");
+        db.close();
+      };
+      request.onerror = (event) => {
+        log("❌ Failed to write DATA to DB");
+      };
+    }
+  </script>
+</body>
+
+</html>
