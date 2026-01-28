@@ -18,8 +18,8 @@
 
   <h1>Web Storage Test</h1>
 
-  <button onclick="clearLog(); deleteData()">Delete Data</button><br>
-  <button id="persist" onclick="persistData()">Persist Storage</button>
+  <button id="persist" style="margin-right: 30px;">Persist Storage</button>
+  <button id="delete">Delete Data</button><br>
 
 
   <div id="results"></div>
@@ -48,6 +48,17 @@
     }
 
     const persistButton = document.getElementById("persist");
+    const deleteButton = document.getElementById("delete");
+
+    document.getElementById("persist").addEventListener("click", () => {
+      persistData();
+    });
+    document.getElementById("delete").addEventListener("click", () => {
+      if (confirm("Are you sure you want to delete stored data?")) {
+        clearLog();
+        deleteData();
+      }
+    });
 
     function persistData() {
       if ("Notification" in window) {
