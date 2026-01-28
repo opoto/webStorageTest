@@ -50,16 +50,20 @@
     const persistButton = document.getElementById("persist");
 
     function persistData() {
-      if (Notification.permission === "granted") {
-        new Notification("✅ Notification permission already granted!");
-      } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") {
-            new Notification("✅ Notification permission granted!");
-          } else {
-            log("❌ Notification permission denied")
-          }
-        });
+      if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+          new Notification("✅ Notification permission already granted!");
+        } else if (Notification.permission !== "denied") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              new Notification("✅ Notification permission granted!");
+            } else {
+              log("❌ Notification permission denied")
+            }
+          });
+        }
+      } else {
+        log("❌ Browser does not support notifications");
       }
 
       navigator.storage.persist().then((persistent) => {
