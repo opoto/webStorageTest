@@ -19,7 +19,6 @@
   <h1>Web Storage Test</h1>
 
   <button id="persist" style="margin-right: 30px;">Persist Storage</button>
-  <button id="update" style="margin-right: 30px; display: none">Update Storage</button>
   <button id="delete">Delete Data</button><br>
 
 
@@ -37,7 +36,6 @@
 
     const results = document.getElementById('results');
     const persistButton = document.getElementById('persist');
-    const updateButton = document.getElementById('update');
 
     function log(message, data) {
       let p = document.createElement('p');
@@ -60,10 +58,6 @@
 
     onClick({
       'persist': persistData,
-      'update': () => {
-        location = location.toString() + "#update";
-        location.reload();
-      },
       'delete': () => {
         if (confirm("Are you sure you want to delete stored data?")) {
           clearLog();
@@ -123,13 +117,13 @@
       objectStore = transaction.objectStore(STORE_NAME);
       const request = objectStore.get(1);
       request.onsuccess = (event) => {
-        updateButton.style.display = "inline";
         const data = event.target.result
-        log("✅ Successfully read DATA from DB", data);
-        if (location.toString().endsWith("#update")) {
-          writeData(data);
-          history.replaceState({}, document.title, location.href.split('#')[0]);
+        if (data.lastUpdated) { // migrate
+          data.lastAccess = data.lastUpdated;
+          delete data.lastUpdated;
         }
+        log("✅ Successfully read DATA from DB", data);
+        writeData(data);
       };
 
       request.onerror = (event) => {
@@ -168,7 +162,7 @@
 
     function writeData(data) {
 
-      data.lastUpdated = new Date().toISOString();
+      data.lastAccess = new Date().toISOString();
 
       // write DATA to db
       const objectStore = db
