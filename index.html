@@ -19,6 +19,7 @@
   <h1>Web Storage Test</h1>
 
   <button id="persist" style="margin-right: 30px;">Persist Storage</button>
+  <button id="update" style="margin-right: 30px; display: none">Update Storage</button>
   <button id="delete">Delete Data</button><br>
 
 
@@ -34,30 +35,41 @@
     const STORE_NAME = 'myTestStore';
     let db, objectStore;
 
+    const results = document.getElementById('results');
+    const persistButton = document.getElementById('persist');
+    const updateButton = document.getElementById('update');
 
-    function log(message) {
-      const results = document.getElementById('results');
-      const p = document.createElement('p');
+    function log(message, data) {
+      let p = document.createElement('p');
       p.textContent = message;
+      if (data) {
+        p.innerHTML += `<p>DATA: ${JSON.stringify(data)}</p>`;
+      }
       results.appendChild(p);
     }
 
     function clearLog() {
-      const results = document.getElementById('results');
       results.innerHTML = '';
     }
 
-    const persistButton = document.getElementById("persist");
-    const deleteButton = document.getElementById("delete");
-
-    document.getElementById("persist").addEventListener("click", () => {
-      persistData();
-    });
-    document.getElementById("delete").addEventListener("click", () => {
-      if (confirm("Are you sure you want to delete stored data?")) {
-        clearLog();
-        deleteData();
+    function onClick(elements) {
+      for (const [id, fn] of Object.entries(elements)) {
+        document.getElementById(id).addEventListener('click', fn);
       }
+    }
+
+    onClick({
+      'persist': persistData,
+      'update': () => {
+        location = location.toString() + "#update";
+        location.reload();
+      },
+      'delete': () => {
+        if (confirm("Are you sure you want to delete stored data?")) {
+          clearLog();
+          deleteData();
+        }
+      },
     });
 
     function persistData() {
@@ -111,10 +123,13 @@
       objectStore = transaction.objectStore(STORE_NAME);
       const request = objectStore.get(1);
       request.onsuccess = (event) => {
+        updateButton.style.display = "inline";
         const data = event.target.result
-        log("✅ Successfully read DATA from DB");
-        log(`DATA: ${JSON.stringify(data)}`);
-        writeData(data);
+        log("✅ Successfully read DATA from DB", data);
+        if (location.toString().endsWith("#update")) {
+          writeData(data);
+          history.replaceState({}, document.title, location.href.split('#')[0]);
+        }
       };
 
       request.onerror = (event) => {
@@ -163,7 +178,7 @@
       const request = objectStore.put(data);
 
       request.onsuccess = (event) => {
-        log("✅ Successfully wrote DATA to DB");
+        log("✅ Successfully wrote DATA to DB", data);
         db.close();
       };
       request.onerror = (event) => {
